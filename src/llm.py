@@ -17,9 +17,11 @@ SISTEM_MESAJI = (
     "Sana hesaplanmis sonuclar verilecek. Kurallar:\n"
     "1. Yeni hesap yapma, rakam uydurma. Sadece verilen rakamlari kullan.\n"
     "2. Turkce, kisa ve sade yaz (en fazla 6-8 cumle).\n"
-    "3. Projenin karli olup olmadigini, karin neye en cok bagli oldugunu ve "
+    "3. Kar = muteahhit geliri - toplam gider. Brut satis gelirini giderle "
+    "karsilastirma; brut gelirin bir kismi arsa sahibine gider.\n"
+    "4. Projenin karli olup olmadigini, karin neye en cok bagli oldugunu ve "
     "hangi varsayimlarin kontrol edilmesi gerektigini soyle.\n"
-    "4. Yatirim tavsiyesi verme; sonuclarin tahmini oldugunu belirt."
+    "5. Yatirim tavsiyesi verme; sonuclarin tahmini oldugunu belirt."
 )
 
 
@@ -32,17 +34,18 @@ def sonuc_metni(s):
     """fizibilite() ciktisini modelin okuyacagi duz metne cevirir."""
     daireler = ", ".join(f"{adet} adet {tip}" for tip, adet in s["daireler"].items() if adet)
     marj = f"%{s['kar_marji'] * 100:.0f}" if s["kar_marji"] is not None else "hesaplanamadi"
+    pay = 100 * s["arsa_sahibine_kalan"] / s["brut_gelir"] if s["brut_gelir"] else 0
     return "\n".join([
         f"Senaryo: {s['ad']}",
         f"Kat sayisi: {s['kat_sayisi']}, insaat alani: {s['insaat_alani']:.0f} m2, yapi sinifi: {s['sinif']}",
         f"Daireler: {daireler} (artan alan {s['artan_alan']:.0f} m2)",
         f"Satis fiyati: {s['m2_fiyat']:,.0f} TL/m2".replace(",", "."),
         f"Brut satis geliri: {_tl(s['brut_gelir'])}",
-        f"Arsa sahibine kalan: {_tl(s['arsa_sahibine_kalan'])}",
+        f"Arsa sahibine kalan: {_tl(s['arsa_sahibine_kalan'])} (gelirin %{pay:.0f}'i)",
         f"Muteahhit geliri: {_tl(s['musteahhit_geliri'])}",
         f"Insaat maliyeti: {_tl(s['insaat_maliyeti'])}, ek giderler: {_tl(s['ek_gider'])}",
         f"Toplam gider: {_tl(s['toplam_gider'])}",
-        f"Kar: {_tl(s['kar'])}, kar marji: {marj}",
+        f"Kar = muteahhit geliri - toplam gider = {_tl(s['kar'])}, kar marji: {marj}",
     ])
 
 
