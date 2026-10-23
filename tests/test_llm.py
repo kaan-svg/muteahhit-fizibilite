@@ -36,3 +36,9 @@ def test_acikla_sahte_istemci():
     cevap = acikla(SONUC, model="deneme", istemci=istemci)
     assert cevap == "Proje karli."
     assert istemci.gelen["model"] == "deneme"
+
+
+def test_arsa_sahibi_payi_ve_kar_formulu_yaziliyor():
+    metin = sonuc_metni(SONUC)
+    assert "gelirin %40'i" in metin
+    assert "Kar = muteahhit geliri - toplam gider" in metin
