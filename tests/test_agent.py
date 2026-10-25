@@ -22,7 +22,7 @@ class SahteIstemci:
         self.yanitlar = list(yanitlar)
         self.gorulen = []  # her cagrida modele giden mesajlar
 
-    def chat(self, model, messages, tools):
+    def chat(self, model, messages, tools, **kw):
         self.gorulen.append(list(messages))
         return self.yanitlar.pop(0)
 
@@ -78,3 +78,13 @@ def test_konusma_hafizasi_korunur():
     calistir(mesajlar, istemci=istemci, **SESSIZ)
     icerikler = [m["content"] for m in istemci.gorulen[0]]
     assert "ilk" in icerikler and "bir" in icerikler
+
+
+def test_think_desteklenmezse_tekrar_dener():
+    class ThinkYok(SahteIstemci):
+        def chat(self, model, messages, tools, **kw):
+            if "think" in kw:
+                raise RuntimeError("model does not support thinking")
+            return super().chat(model, messages, tools)
+
+    assert sor("selam", istemci=ThinkYok(cevap("Merhaba")), **SESSIZ) == "Merhaba"
