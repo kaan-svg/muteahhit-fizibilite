@@ -60,3 +60,15 @@ def test_mahalle_fiyatlari():
 ])
 def test_hatalar_cokmez_hata_doner(ad, argumanlar):
     assert "hata" in arac_calistir(ad, argumanlar)
+
+
+def test_buyuk_harfli_argumanlar_kabul_edilir():
+    buyuk = {("TAKS" if k == "taks" else k): v for k, v in ARSA.items()}
+    assert arac_calistir("fizibilite_hesapla", buyuk) == arac_calistir("fizibilite_hesapla", ARSA)
+
+
+def test_duyarlilikta_ic_ice_buyuk_harf():
+    buyuk = {"Arsa": {**ARSA, "Emsal": 1.5}, "Parametre": "arsa_sahibi_payi", "Degerler": [0.4]}
+    del buyuk["Arsa"]["emsal"]
+    assert "hata" not in arac_calistir("duyarlilik_analizi", buyuk)
+
