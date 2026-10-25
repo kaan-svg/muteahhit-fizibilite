@@ -42,3 +42,4 @@ def test_arsa_sahibi_payi_ve_kar_formulu_yaziliyor():
     metin = sonuc_metni(SONUC)
     assert "gelirin %40'i" in metin
     assert "Kar = muteahhit geliri - toplam gider" in metin
+
