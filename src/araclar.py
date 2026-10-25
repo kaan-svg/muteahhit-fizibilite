@@ -33,13 +33,13 @@ ARACLAR = [
                     "taks": {"type": "number", "description": "TAKS, or. 0.30"},
                     "emsal": {"type": "number", "description": "Emsal (KAKS), or. 1.50"},
                     "mahalle": {"type": "string", "description": "Alanya mahallesi, or. Mahmutlar"},
-                    "oran_1_1": {**_ORAN, "description": "1+1 dairelerin alan payi, 0-1"},
-                    "oran_2_1": {**_ORAN, "description": "2+1 dairelerin alan payi, 0-1"},
-                    "oran_3_1": {**_ORAN, "description": "3+1 dairelerin alan payi, 0-1"},
-                    "max_kat": {"type": "integer", "description": "Plandaki kat siniri (varsa)"},
-                    "arsa_sahibi_payi": {**_ORAN, "description": "Kat karsiliginda arsa sahibine birakilan pay, or. 0.45"},
-                    "ek_gider_orani": {**_ORAN, "description": "KDV, ruhsat, pazarlama icin insaat maliyetine eklenen oran, or. 0.25"},
-                    "m2_fiyat": {"type": "number", "description": "Satis fiyati TL/m2; verilmezse mahalle ortalamasi kullanilir"},
+                    "oran_1_1": {**_ORAN, "description": "Istege bagli. 1+1 dairelerin alan payi, 0-1"},
+                    "oran_2_1": {**_ORAN, "description": "Istege bagli. 2+1 dairelerin alan payi, 0-1"},
+                    "oran_3_1": {**_ORAN, "description": "Istege bagli. 3+1 dairelerin alan payi, 0-1. Hic oran verilmezse %50 1+1, %50 2+1"},
+                    "max_kat": {"type": "integer", "description": "Istege bagli. Plandaki kat siniri"},
+                    "arsa_sahibi_payi": {**_ORAN, "description": "Istege bagli. Kat karsiliginda arsa sahibine birakilan pay, or. 0.45"},
+                    "ek_gider_orani": {**_ORAN, "description": "Istege bagli. KDV, ruhsat, pazarlama icin insaat maliyetine eklenen oran, or. 0.25"},
+                    "m2_fiyat": {"type": "number", "description": "Istege bagli. Satis fiyati TL/m2; verilmezse mahalle ortalamasi kullanilir"},
                 },
                 "required": ["arsa_alani", "taks", "emsal", "mahalle"],
             },
@@ -172,9 +172,17 @@ ARAC_FONKSIYONLARI = {
 }
 
 
+def _kucuk_harf(a):
+    """{'TAKS': 0.3} -> {'taks': 0.3}. Ic ice sozlukleri de cevirir."""
+    if not isinstance(a, dict):
+        return a
+    return {str(k).strip().lower(): _kucuk_harf(v) for k, v in a.items()}
+
+
 def arac_calistir(ad, argumanlar=None):
     """Modelin istedigi araci calistirir. Hata olursa cokmez, hatayi dondurur
     ki model argumanlarini duzeltip tekrar deneyebilsin."""
+    argumanlar = _kucuk_harf(argumanlar or {})
     if ad not in ARAC_FONKSIYONLARI:
         return {"hata": f"Bilinmeyen arac: {ad}. Mevcut: {list(ARAC_FONKSIYONLARI)}"}
     try:
@@ -208,3 +216,4 @@ if __name__ == "__main__":
         print("<- Sonuc:")
         print(json.dumps(arac_calistir(c.function.name, c.function.arguments), ensure_ascii=False, indent=2))
         print()
+
