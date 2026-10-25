@@ -12,19 +12,29 @@ Calistirma:
     python -m src.agent "soru..."       # tek soru
 """
 import json
+import os
+import time
 
 from src.araclar import ARACLAR, arac_calistir
 from src.llm import VARSAYILAN_MODEL
 
 MAKS_ADIM = 6
 
+# qwen3 gibi modeller cevap vermeden once uzun uzun "dusunur" (thinking).
+# Arac secimi icin buna gerek yok ve cevabi 5-10 kat yavaslatiyor, o yuzden kapali.
+# Acmak icin: FIZIBILITE_DUSUN=1 python -m src.agent
+DUSUN = os.environ.get("FIZIBILITE_DUSUN") == "1"
+
 SISTEM_MESAJI = (
     "Sen Alanya'daki kucuk muteahhitlere arsa fizibilitesinde yardim eden bir asistansin.\n"
     "Kurallar:\n"
     "1. Her rakami araclarla hesapla. Kendin hesap yapma, rakam uydurma.\n"
-    "2. Arsa alani, TAKS, emsal veya mahalle eksikse tahmin etme, kullaniciya sor.\n"
-    "3. Arac {\"hata\": ...} donerse hatayi oku: argumani duzeltebiliyorsan tekrar dene, "
-    "duzeltemiyorsan kullaniciya ne eksik oldugunu acikla.\n"
+    "2. Zorunlu bilgiler sadece arsa_alani, taks, emsal ve mahalle. Bunlardan biri eksikse "
+    "tahmin etme, kullaniciya sor. Diger alanlar istege bagli; kullanici vermediyse bos birak "
+    "ve kullaniciya sorma.\n"
+    "3. Arac {\"hata\": ...} donerse hatayi oku. Arguman adi veya bicimi yanlissa duzeltip "
+    "araci hemen tekrar cagir, kullaniciya sorma. Sadece kullanicidan gelmesi gereken bir "
+    "bilgi eksikse (or. mahalle icin fiyat verisi yok) kullaniciya acikla.\n"
     "4. Kar = muteahhit geliri - toplam gider. Brut geliri giderle karsilastirma.\n"
     "5. 'Kar neye bagli', 'X olsa ne olur' sorularinda duyarlilik_analizi kullan.\n"
     "6. Turkce, kisa ve net yaz. Sonuclarin tahmini oldugunu belirt, yatirim tavsiyesi verme."
@@ -32,7 +42,13 @@ SISTEM_MESAJI = (
 
 
 def _sohbet(istemci, model, mesajlar):
-    return istemci.chat(model=model, messages=mesajlar, tools=ARACLAR)
+    try:
+        return istemci.chat(model=model, messages=mesajlar, tools=ARACLAR, think=DUSUN)
+    except Exception as e:
+        # Dusunme ozelligi olmayan modeller 'think' parametresini kabul etmeyebilir.
+        if "think" not in str(e).lower():
+            raise
+        return istemci.chat(model=model, messages=mesajlar, tools=ARACLAR)
 
 
 def calistir(mesajlar, model=VARSAYILAN_MODEL, istemci=None, maks_adim=MAKS_ADIM, gunluk=print):
@@ -45,8 +61,11 @@ def calistir(mesajlar, model=VARSAYILAN_MODEL, istemci=None, maks_adim=MAKS_ADIM
         import ollama
         istemci = ollama
 
-    for _ in range(maks_adim):
+    for adim in range(1, maks_adim + 1):
+        gunluk(f"  ... model calisiyor (adim {adim})")
+        baslangic = time.perf_counter()
         mesaj = _sohbet(istemci, model, mesajlar)["message"]
+        gunluk(f"      {time.perf_counter() - baslangic:.1f} sn")
         mesajlar.append(mesaj)
         cagrilar = mesaj.get("tool_calls") or []
         if not cagrilar:
@@ -97,3 +116,4 @@ if __name__ == "__main__":
         print(sor(" ".join(sys.argv[1:])))
     else:
         sohbet_modu()
+
