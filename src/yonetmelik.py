@@ -51,27 +51,53 @@ def pdf_metni(yol=PDF_YOLU):
 
 # ---------- 2. Maddelere bolme ----------
 
+# Satir basinda fikra "(3)" veya bent "a)", "çç)", "1)" isareti
+_ISARET = r"(?:\(\d+\)|[a-zçğıöşü]{1,2}\)|\d+\))\s"
+
+
 def _temizle(metin):
+    """PDF'in satir kirmalarini birlestirir; fikra/bent baslarindaki satir sonlarini korur."""
     metin = re.sub(r"[ \t]+", " ", metin)
-    return re.sub(r"\n{3,}", "\n\n", metin).strip()
+    metin = re.sub(r"-\n(?=[a-zçğıöşü])", "", metin)            # heceden bolunmus kelime
+    metin = re.sub(rf"\n(?!{_ISARET})", " ", metin)              # duz satir kirmasi -> bosluk
+    return re.sub(r" {2,}", " ", metin).strip()
 
 
-def _parcala(metin, maks=MAKS_PARCA):
-    """Uzun metni '(1)', '(2)' fikralarindan, yoksa satirlardan boler."""
-    if len(metin) <= maks:
-        return [metin]
-    bloklar = re.split(r"(?=\(\d+\)\s)", metin)
-    if len(bloklar) == 1:
-        bloklar = metin.split("\n")
+def _paketle(bloklar, maks):
+    """Kucuk bloklari maks uzunluga kadar birlestirir."""
     parcalar, simdiki = [], ""
     for b in bloklar:
-        if simdiki and len(simdiki) + len(b) > maks:
+        if simdiki and len(simdiki) + len(b) + 1 > maks and len(simdiki) > maks // 5:
             parcalar.append(simdiki.strip())
             simdiki = ""
-        simdiki += b if b.startswith("(") or not simdiki else "\n" + b
+        simdiki = f"{simdiki}\n{b}" if simdiki else b
     if simdiki.strip():
         parcalar.append(simdiki.strip())
     return parcalar
+
+
+def _parcala(metin, maks=MAKS_PARCA):
+    """Uzun metni once fikralardan "(n)", hala uzunsa bentlerden "a)" boler.
+
+    Sadece satir basindaki isaretlerden bolunur; metin icindeki
+    "(6) numarali alt bent" gibi atiflar bolme noktasi sayilmaz.
+    """
+    if len(metin) <= maks:
+        return [metin]
+    fikralar = re.split(r"\n(?=\(\d+\)\s)", metin)
+    bloklar = []
+    for f in fikralar:
+        bloklar += [f] if len(f) <= maks else re.split(rf"\n(?={_ISARET})", f)
+    # Bentten de bolunemeyen dev bloklar: cumle sonlarindan kes
+    son = []
+    for b in bloklar:
+        while len(b) > maks:
+            kes = b.rfind(". ", 0, maks)
+            kes = kes + 1 if kes > maks // 3 else maks
+            son.append(b[:kes].strip())
+            b = b[kes:].strip()
+        son.append(b)
+    return _paketle(son, maks)
 
 
 def maddelere_bol(metin):
