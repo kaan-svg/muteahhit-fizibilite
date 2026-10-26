@@ -68,6 +68,22 @@ ARACLAR = [
     {
         "type": "function",
         "function": {
+            "name": "yonetmelik_ara",
+            "description": (
+                "Planli Alanlar Imar Yonetmeligi'nde arama yapar, en ilgili maddeleri dondurur. "
+                "Emsal/TAKS'a neyin dahil oldugu, balkon, bodrum, cati, otopark, cekme mesafesi, "
+                "kat yuksekligi gibi mevzuat sorularinda kullan."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"soru": {"type": "string", "description": "Aranacak konu, or. 'balkonlar emsale dahil mi'"}},
+                "required": ["soru"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "mahalle_fiyatlari",
             "description": "Fiyat verisi olan Alanya mahallelerini ve ortalama m2 satis fiyatlarini listeler.",
             "parameters": {"type": "object", "properties": {}},
@@ -165,7 +181,16 @@ def mahalle_fiyatlari():
     return {m.title(): round(f) for m, f in sorted(pazar_yukle().items())}
 
 
+def yonetmelik_ara(soru):
+    from src.yonetmelik import ara
+    if not str(soru).strip():
+        raise ValueError("Soru bos olamaz")
+    return {"sonuclar": [{"madde": s["madde"], "baslik": s["baslik"], "metin": s["metin"]}
+                         for s in ara(str(soru), k=3)]}
+
+
 ARAC_FONKSIYONLARI = {
+    "yonetmelik_ara": yonetmelik_ara,
     "fizibilite_hesapla": fizibilite_hesapla,
     "duyarlilik_analizi": duyarlilik_analizi,
     "mahalle_fiyatlari": mahalle_fiyatlari,
@@ -187,7 +212,7 @@ def arac_calistir(ad, argumanlar=None):
         return {"hata": f"Bilinmeyen arac: {ad}. Mevcut: {list(ARAC_FONKSIYONLARI)}"}
     try:
         return ARAC_FONKSIYONLARI[ad](**(argumanlar or {}))
-    except (ValueError, KeyError, TypeError) as e:
+    except (ValueError, KeyError, TypeError, FileNotFoundError) as e:
         return {"hata": str(e).strip("'\"")}
 
 
@@ -216,4 +241,3 @@ if __name__ == "__main__":
         print("<- Sonuc:")
         print(json.dumps(arac_calistir(c.function.name, c.function.arguments), ensure_ascii=False, indent=2))
         print()
-

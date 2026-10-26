@@ -37,7 +37,10 @@ SISTEM_MESAJI = (
     "bilgi eksikse (or. mahalle icin fiyat verisi yok) kullaniciya acikla.\n"
     "4. Kar = muteahhit geliri - toplam gider. Brut geliri giderle karsilastirma.\n"
     "5. 'Kar neye bagli', 'X olsa ne olur' sorularinda duyarlilik_analizi kullan.\n"
-    "6. Turkce, kisa ve net yaz. Sonuclarin tahmini oldugunu belirt, yatirim tavsiyesi verme."
+    "6. Mevzuat sorularinda yonetmelik_ara kullan ve cevapta madde numarasini yaz. "
+    "Bulunan metinde cevap yoksa bilmedigini soyle, tahmin etme. Parselin imar plani "
+    "notlari yonetmelikten farkli olabilir, bunu hatirlat.\n"
+    "7. Turkce, kisa ve net yaz. Sonuclarin tahmini oldugunu belirt, yatirim tavsiyesi verme."
 )
 
 
@@ -116,4 +119,3 @@ if __name__ == "__main__":
         print(sor(" ".join(sys.argv[1:])))
     else:
         sohbet_modu()
-
