@@ -92,3 +92,8 @@ def test_arac_indeks_yoksa_hata_doner(monkeypatch, tmp_path):
     monkeypatch.setattr(yonetmelik, "INDEKS_YOLU", tmp_path / "yok.json")
     sonuc = arac_calistir("yonetmelik_ara", {"soru": "balkon"})
     assert "hata" in sonuc
+
+
+def test_resmi_gazete_sayisi_bent_sanilmaz():
+    ham = "(1) Balkonlar (Ek ibare:RG-11/7/2021-\n31538) emsale dahil edilmez."
+    assert _temizle(ham) == "(1) Balkonlar (Ek ibare:RG-11/7/2021-31538) emsale dahil edilmez."
