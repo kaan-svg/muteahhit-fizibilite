@@ -5,7 +5,7 @@ import re
 import pytest
 
 from src import yonetmelik
-from src.yonetmelik import _parcala, ara, indeks_kur, maddelere_bol
+from src.yonetmelik import _parcala, _temizle, ara, indeks_kur, maddelere_bol
 
 ORNEK = """BİRİNCİ BÖLÜM
 Amaç, Kapsam, Dayanak ve Tanımlar
@@ -47,11 +47,31 @@ def test_sonraki_baslik_ve_bolum_govdeye_karismaz():
 
 
 def test_uzun_madde_fikralardan_bolunur():
-    uzun = " ".join(f"({i}) " + "kelime " * 60 for i in range(1, 11))
+    uzun = "MADDE 9 – " + "\n".join(f"({i}) " + "kelime " * 60 for i in range(1, 11))
     parcalar = _parcala(uzun, maks=1000)
     assert len(parcalar) > 1
     assert all(len(x) <= 1000 for x in parcalar)
-    assert all(x.startswith("(") for x in parcalar)
+    assert parcalar[0].startswith("MADDE 9 – (1)")      # baslik tek basina kalmaz
+    assert all(x.startswith("(") for x in parcalar[1:])
+
+
+def test_metin_icindeki_atif_bolme_noktasi_degil():
+    metin = "(1) " + "a " * 400 + "\n(2) birinci fikranin (6) numarali alt bendinde " + "b " * 400
+    parcalar = _parcala(metin, maks=900)
+    assert not any(x.startswith("(6)") for x in parcalar)
+
+
+def test_dev_fikra_bentlerden_bolunur():
+    tanimlar = "MADDE 4 – (1) Bu Yonetmelikte gecen;\n" + "\n".join(
+        f"{h}) Terim{h}: " + "aciklama " * 40 for h in "abcçdefgğh")
+    parcalar = _parcala(tanimlar, maks=1000)
+    assert len(parcalar) > 1 and all(len(x) <= 1000 for x in parcalar)
+    assert parcalar[0].startswith("MADDE 4")
+
+
+def test_pdf_satir_kirmalari_birlesir():
+    ham = "MADDE 5 – (1) Uygulama imar plani\nolmayan alanlarda yapi-\nlasma.\n(2) Ikinci fikra\na) bent"
+    assert _temizle(ham) == "MADDE 5 – (1) Uygulama imar plani olmayan alanlarda yapilasma.\n(2) Ikinci fikra\na) bent"
 
 
 def test_ara_dogru_maddeyi_bulur():
