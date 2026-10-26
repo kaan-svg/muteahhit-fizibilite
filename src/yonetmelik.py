@@ -52,13 +52,14 @@ def pdf_metni(yol=PDF_YOLU):
 # ---------- 2. Maddelere bolme ----------
 
 # Satir basinda fikra "(3)" veya bent "a)", "çç)", "1)" isareti
-_ISARET = r"(?:\(\d+\)|[a-zçğıöşü]{1,2}\)|\d+\))\s"
+_ISARET = r"(?:\(\d+\)|[a-zçğıöşü]{1,2}\)|\d{1,2}\))\s"
 
 
 def _temizle(metin):
     """PDF'in satir kirmalarini birlestirir; fikra/bent baslarindaki satir sonlarini korur."""
     metin = re.sub(r"[ \t]+", " ", metin)
     metin = re.sub(r"-\n(?=[a-zçğıöşü])", "", metin)            # heceden bolunmus kelime
+    metin = re.sub(r"-\n(?=\d)", "-", metin)                     # "RG-11/7/2021-\n31538" gibi tarih-sayi
     metin = re.sub(rf"\n(?!{_ISARET})", " ", metin)              # duz satir kirmasi -> bosluk
     return re.sub(r" {2,}", " ", metin).strip()
 
