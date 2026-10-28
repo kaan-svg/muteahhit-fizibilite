@@ -68,3 +68,10 @@ def test_sohbet_baglanti_hatasi():
 def test_arayuz_kurulur():
     from src.arayuz import arayuz
     assert arayuz() is not None
+
+
+def test_oran_toplami_100_degilse_uyari():
+    form = list(FORM)
+    form[4], form[5] = 75, 20
+    assert "%95" in hesapla(*form)[0]
+    assert "ölçeklendi" not in hesapla(*FORM)[0]
