@@ -51,6 +51,9 @@ def hesapla(*form):
     s = arac_calistir("fizibilite_hesapla", arsa)
     if "hata" in s:
         return f"**Hata:** {s['hata']}", ""
+    oran_toplami = form[4] + form[5] + form[6]
+    uyari = (f"\n\n> ⚠️ Daire oranlarının toplamı %{oran_toplami:g}; %100'e ölçeklendi."
+             if oran_toplami and abs(oran_toplami - 100) > 0.5 else "")
 
     daireler = ", ".join(f"{a} adet {t}" for t, a in s["daireler"].items())
     durum = "✅ Kârlı" if s["kar_milyon_tl"] > 0 else "❌ Zararlı"
@@ -70,7 +73,7 @@ def hesapla(*form):
         "",
         "_Tahmini değerlerdir. Fiyatlar ilan ortalaması, maliyet Bakanlık birim fiyatıdır; "
         "emsal dışı alanlar (balkon, otopark) henüz hesaba katılmıyor._",
-    ])
+    ]) + uyari
 
     d = arac_calistir("duyarlilik_analizi", {"arsa": arsa, "parametre": "arsa_sahibi_payi",
                                              "degerler": [p / 100 for p in PAY_DEGERLERI]})
