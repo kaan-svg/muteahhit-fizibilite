@@ -60,9 +60,19 @@ def test_duyarlilik_iki_rakam_gerekir():
 
 def test_eksik_bilgide_uydurma_yakalanir():
     v = VAKALAR["eksik_bilgi"]
-    assert puanla(v, "TAKS ve emsal nedir?", [])["sormali"]
+    assert puanla(v, "Hesap icin TAKS ve emsal degerlerini yazar misin?", [])["sormali"]
     uydurma = arac_izleri([tool("fizibilite_hesapla", {"kar_milyon_tl": 1.0})])
     assert not puanla(v, "Emsal 1.5 varsaydim. Baska?", uydurma)["sormali"]
+    # Hata donse bile cagri yapilmissa deger uydurulmustur (gercek bir hata ornegi)
+    hatali = arac_izleri([tool("fizibilite_hesapla", {"hata": "Konakli icin fiyat verisi yok"})])
+    assert not puanla(v, "Konakli icin fiyat yok. TAKS ve emsal?", hatali)["sormali"]
+
+
+def test_marj_ile_cevap_rakam_sayilir():
+    v = VAKALAR["avsallar_buyuk"]
+    izler = arac_izleri([tool("fizibilite_hesapla", {"kar_milyon_tl": v["beklenen_kar"][0]})])
+    gercek_cevap = "Karlı olmamış ve kar marjı -16.2% olarak hesaplanmıştır. Kar elde edilememiştir."
+    assert puanla(v, gercek_cevap, izler) == {"arac": True, "rakam": True, "yon": True}
 
 
 def test_balkon_yasak_ifade():
@@ -87,6 +97,7 @@ def test_vaka_calistir_sahte_model():
 
     s = vaka_calistir(VAKALAR["mahalleler"], istemci=Sahte())
     assert s["gecti"] and s["araclar"] == ["mahalle_fiyatlari"]
+    assert s["cagrilar"] == [{"ad": "mahalle_fiyatlari", "argumanlar": {}}]
 
 
 def test_ozet_tablosu():
