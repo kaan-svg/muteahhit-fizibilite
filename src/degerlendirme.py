@@ -6,11 +6,11 @@ script formulleri degil, LLM'in araclari kullanmasini ve sonucu aktarmasini olce
 
 Kontroller:
   arac      dogru arac cagrildi ve beklenen sonucu dondurdu mu (argumanlar dogru mu)
-  rakam     cevaptaki kar rakami aractan donenle ayni mi (+-0.06 milyon)
+  rakam     cevaptaki kar (veya kar marji) aractan donenle ayni mi (+-0.06 milyon)
   yon       karli/zararli dogru soylendi mi
   madde     mevzuat cevabinda beklenen madde numarasi var mi
   yasak     cevapta yanlis oldugu bilinen bir ifade var mi
-  sormali   eksik bilgide tahmin etmek yerine soru soruldu mu
+  sormali   eksik bilgide (TAKS/emsal) hesap araci hic cagrilmadan bu bilgiler soruldu mu
 
 Calistirma (Ollama acik olmali, 10 vaka x 3 tekrar ~5-10 dk):
     python -m src.degerlendirme
@@ -39,6 +39,10 @@ def _kar(arsa):
     return arac_calistir("fizibilite_hesapla", arsa)["kar_milyon_tl"]
 
 
+def _marj(arsa):
+    return arac_calistir("fizibilite_hesapla", arsa)["kar_marji_yuzde"]
+
+
 # ---------- Vakalar ----------
 
 HESAP_VAKALARI = [
@@ -63,7 +67,8 @@ HESAP_VAKALARI = [
 def vakalar():
     liste = []
     for ad, soru, arsa in HESAP_VAKALARI:
-        liste.append({"ad": ad, "tur": "hesap", "soru": soru, "beklenen_kar": [_kar(arsa)]})
+        liste.append({"ad": ad, "tur": "hesap", "soru": soru, "beklenen_kar": [_kar(arsa)],
+                      "beklenen_marj": _marj(arsa)})
 
     mahmutlar = HESAP_VAKALARI[0][2]
     liste.append({
@@ -109,6 +114,16 @@ def arac_izleri(mesajlar):
     return izler
 
 
+def cagri_izleri(mesajlar):
+    """Modelin yaptigi arac cagrilari ve argumanlari (hata ayiklama icin)."""
+    cagrilar = []
+    for m in mesajlar:
+        for c in _alan(m, "tool_calls") or []:
+            f = c["function"]
+            cagrilar.append({"ad": f["name"], "argumanlar": dict(f["arguments"] or {})})
+    return cagrilar
+
+
 def _kar_sonuclari(izler):
     """Arac sonuclarindaki tum kar rakamlari (fizibilite ve duyarlilik)."""
     karlar = []
@@ -127,7 +142,9 @@ def _yakin(a, b):
 
 def _zarar_diyor(cevap):
     c = cevap.lower()
-    return any(k in c for k in ("zarar", "karlı değil", "kârlı değil", "karli degil", "negatif", "kayıp"))
+    return any(k in c for k in ("zarar", "karlı değil", "kârlı değil", "karli degil", "negatif", "kayıp",
+                                "karlı olmamış", "kârlı olmamış", "elde edilemem", "karlı olmadığı",
+                                "kârlı olmadığı", "kar edilemez"))
 
 
 def puanla(vaka, cevap, izler):
@@ -138,11 +155,14 @@ def puanla(vaka, cevap, izler):
         sayi = [abs(x) for x in sayilar(cevap)]
         p["arac"] = all(any(_yakin(b, k) for k in karlar) for b in vaka["beklenen_kar"])
         p["rakam"] = all(any(_yakin(abs(b), x) for x in sayi) for b in vaka["beklenen_kar"])
+        if not p["rakam"] and "beklenen_marj" in vaka:  # "marj %-16,2" de dogru bir cevap
+            p["rakam"] = any(abs(abs(vaka["beklenen_marj"]) - x) <= 0.15 for x in sayi)
         if len(vaka["beklenen_kar"]) == 1:
             p["yon"] = _zarar_diyor(cevap) == (vaka["beklenen_kar"][0] < 0)
     elif vaka["tur"] == "sormali":
-        uydurdu = any(ad == "fizibilite_hesapla" and "hata" not in s for ad, s in izler)
-        p["sormali"] = not uydurdu and "?" in cevap
+        # Hesap araci cagrildiysa TAKS/emsal uydurulmus demektir (hata donse bile).
+        uydurdu = any(ad == "fizibilite_hesapla" for ad, _ in izler)
+        p["sormali"] = not uydurdu and any(k in cevap.lower() for k in ("taks", "emsal"))
     elif vaka["tur"] == "mevzuat":
         p["arac"] = any(ad == "yonetmelik_ara" for ad, _ in izler)
         p["madde"] = re.search(rf"\b{vaka['madde']}\b", cevap) is not None
@@ -168,7 +188,7 @@ def vaka_calistir(vaka, **kw):
     kontroller = puanla(vaka, cevap, izler)
     return {"vaka": vaka["ad"], "gecti": all(kontroller.values()), "kontroller": kontroller,
             "sure_sn": round(time.perf_counter() - baslangic, 1),
-            "araclar": [ad for ad, _ in izler], "cevap": cevap}
+            "araclar": [ad for ad, _ in izler], "cagrilar": cagri_izleri(mesajlar), "cevap": cevap}
 
 
 def degerlendir(tekrar=3, sadece=None, **kw):

@@ -37,7 +37,8 @@ def m2_fiyati(mahalle, fiyatlar=None):
         fiyatlar = pazar_yukle()
     anahtar = mahalle.strip().lower()
     if anahtar not in fiyatlar:
-        raise KeyError(f"'{mahalle}' icin fiyat yok. Mevcut: {sorted(fiyatlar)}")
+        raise KeyError(f"'{mahalle}' icin fiyat verisi yok. Mevcut: {sorted(fiyatlar)}. "
+                       "Kullanicidan m2 satis fiyatini isteyip m2_fiyat ile hesaplayabilirsin.")
     return fiyatlar[anahtar]
 
 
