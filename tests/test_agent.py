@@ -37,7 +37,8 @@ def test_arac_yoksa_dogrudan_cevap():
 
 def test_arac_sonucu_modele_geri_verilir():
     istemci = SahteIstemci(arac("fizibilite_hesapla", ARSA), cevap("Zarar ediyorsun."))
-    assert sor("karli mi?", istemci=istemci, **SESSIZ) == "Zarar ediyorsun."
+    soru = "Mahmutlar 1000 m2, TAKS 0.30, emsal 1.50, pay %45, ek gider %25. Karli mi?"
+    assert sor(soru, istemci=istemci, **SESSIZ) == "Zarar ediyorsun."
 
     ikinci_cagri = istemci.gorulen[1]
     tool_mesaji = ikinci_cagri[-1]
@@ -88,3 +89,13 @@ def test_think_desteklenmezse_tekrar_dener():
             return super().chat(model, messages, tools)
 
     assert sor("selam", istemci=ThinkYok(cevap("Merhaba")), **SESSIZ) == "Merhaba"
+
+
+def test_uydurulan_deger_ile_hesap_engellenir():
+    istemci = SahteIstemci(
+        arac("fizibilite_hesapla", {"arsa_alani": 500, "taks": 0.3, "emsal": 1.5, "mahalle": "Oba"}),
+        cevap("TAKS ve emsal nedir?"),
+    )
+    sor("Oba'da 500 m2 arsam var, karli mi?", istemci=istemci, **SESSIZ)
+    hata = json.loads(istemci.gorulen[1][-1]["content"])["hata"]
+    assert "taks" in hata and "emsal" in hata and "arsa_alani" not in hata
