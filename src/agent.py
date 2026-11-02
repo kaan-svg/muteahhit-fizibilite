@@ -16,6 +16,7 @@ import os
 import time
 
 from src.araclar import ARACLAR, arac_calistir
+from src.koruma import uydurma_kontrol
 from src.llm import VARSAYILAN_MODEL
 
 MAKS_ADIM = 6
@@ -76,7 +77,7 @@ def calistir(mesajlar, model=VARSAYILAN_MODEL, istemci=None, maks_adim=MAKS_ADIM
 
         for c in cagrilar:
             ad, argumanlar = c["function"]["name"], c["function"]["arguments"] or {}
-            sonuc = arac_calistir(ad, argumanlar)
+            sonuc = uydurma_kontrol(ad, argumanlar, mesajlar) or arac_calistir(ad, argumanlar)
             gunluk(f"  -> {ad}({json.dumps(argumanlar, ensure_ascii=False)})")
             if "hata" in sonuc:
                 gunluk(f"     ! {sonuc['hata']}")
