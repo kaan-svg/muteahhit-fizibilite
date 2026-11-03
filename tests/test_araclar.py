@@ -72,3 +72,19 @@ def test_duyarlilikta_ic_ice_buyuk_harf():
     del buyuk["Arsa"]["emsal"]
     assert "hata" not in arac_calistir("duyarlilik_analizi", buyuk)
 
+
+def test_emsal_disi_yuzde_olarak_da_kabul_edilir():
+    a = arac_calistir("fizibilite_hesapla", {**ARSA, "emsal_disi_orani": 20})
+    b = arac_calistir("fizibilite_hesapla", {**ARSA, "emsal_disi_orani": 0.2})
+    assert a == b and a["toplam_insa_alani_m2"] == 1800
+
+
+def test_emsal_disi_duyarlilik():
+    s = arac_calistir("duyarlilik_analizi", {"arsa": ARSA, "parametre": "emsal_disi_orani",
+                                             "degerler": [0, 0.15, 0.30]})
+    karlar = [r["kar_milyon_tl"] for r in s["sonuclar"]]
+    assert karlar == sorted(karlar, reverse=True)
+
+
+def test_emsal_disi_yuzde_30_ustu_hata():
+    assert "hata" in arac_calistir("fizibilite_hesapla", {**ARSA, "emsal_disi_orani": 0.4})

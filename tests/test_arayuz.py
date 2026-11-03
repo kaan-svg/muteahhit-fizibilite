@@ -75,3 +75,9 @@ def test_oran_toplami_100_degilse_uyari():
     form[4], form[5] = 75, 20
     assert "%95" in hesapla(*form)[0]
     assert "ölçeklendi" not in hesapla(*FORM)[0]
+
+
+def test_emsal_disi_kaydiricisi():
+    ozet = hesapla(*FORM, 20)[0]
+    assert "1800 m²" in ozet
+    assert hesapla(*FORM, 20)[0] != hesapla(*FORM, 0)[0]

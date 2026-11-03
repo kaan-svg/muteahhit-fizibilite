@@ -48,3 +48,18 @@ def test_bos_varyasyon_hata():
 def test_tablo_her_senaryoyu_icerir():
     metin = tablo(karsilastir(TEMEL, {"ilk": {}, "ikinci": {"mahalle": "b"}}))
     assert "ilk" in metin and "ikinci" in metin
+
+
+def test_emsal_disi_alan_maliyeti_arttirir_geliri_degistirmez():
+    temel = fizibilite(**TEMEL)
+    s = fizibilite(**TEMEL, emsal_disi_orani=0.20)
+    assert s["toplam_insa_alani"] == pytest.approx(1800)
+    assert s["insaat_maliyeti"] == pytest.approx(1800 * 20_000)
+    assert s["brut_gelir"] == temel["brut_gelir"]
+    assert s["kar"] < temel["kar"]
+
+
+@pytest.mark.parametrize("oran", [-0.1, 0.31])
+def test_emsal_disi_sinir_disi_hata(oran):
+    with pytest.raises(ValueError, match="Madde 5"):
+        fizibilite(**TEMEL, emsal_disi_orani=oran)
