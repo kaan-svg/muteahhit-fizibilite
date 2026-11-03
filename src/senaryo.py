@@ -8,14 +8,26 @@ from src.gelir import kar_hesapla, m2_fiyati, satis_geliri
 from src.imar import kat_sayisi, taban_alani, toplam_insaat_alani
 from src.maliyet import insaat_maliyeti, konut_sinifi
 
+# Planli Alanlar Imar Yonetmeligi Madde 5: emsal disi alanlarin toplami emsale
+# esas alanin %30'unu asamaz.
+MAKS_EMSAL_DISI_ORANI = 0.30
+
 
 def fizibilite(arsa_alani, taks, emsal, mahalle, oranlar, max_kat=None,
                buyuklukler=None, ortak_alan_orani=VARSAYILAN_ORTAK_ALAN_ORANI,
                m2_fiyat=None, tip_carpani=None, piyasa_carpani=1.0,
                birim_maliyet=None, arsa_bedeli=0, arsa_sahibi_payi=0,
-               ek_gider_orani=0, fiyatlar=None, ad=None):
-    """Tek bir senaryonun tum hesabini yapar ve ozet sozluk dondurur."""
+               ek_gider_orani=0, emsal_disi_orani=0, fiyatlar=None, ad=None):
+    """Tek bir senaryonun tum hesabini yapar ve ozet sozluk dondurur.
+
+    emsal_disi_orani: balkon, merdiven, otopark, siginak gibi emsale sayilmayan
+    ama insa edilen alanlarin emsal alanina orani (0 - 0.30). Bu alanlar
+    maliyete eklenir; satilabilir alana eklenmez (temkinli varsayim).
+    """
     buyuklukler = buyuklukler or VARSAYILAN_BUYUKLUKLER
+    if not 0 <= emsal_disi_orani <= MAKS_EMSAL_DISI_ORANI:
+        raise ValueError(f"Emsal disi alan orani 0 ile %30 arasinda olmali (Madde 5), "
+                         f"verilen: {emsal_disi_orani}")
 
     kat = kat_sayisi(taks, emsal, max_kat)
     # Kat siniri emsali kullandirmayabilir: alan, taban x kat ile de sinirli.
@@ -25,13 +37,15 @@ def fizibilite(arsa_alani, taks, emsal, mahalle, oranlar, max_kat=None,
     fiyat = m2_fiyat if m2_fiyat is not None else m2_fiyati(mahalle, fiyatlar)
     gelir = satis_geliri(dagilim["adetler"], buyuklukler, fiyat, tip_carpani)
     sinif = konut_sinifi(kat)
-    maliyet = insaat_maliyeti(alan, sinif, piyasa_carpani, birim_maliyet)
+    insa_alani = alan * (1 + emsal_disi_orani)
+    maliyet = insaat_maliyeti(insa_alani, sinif, piyasa_carpani, birim_maliyet)
     kar = kar_hesapla(gelir["toplam"], maliyet, arsa_bedeli, arsa_sahibi_payi, ek_gider_orani)
 
     return {
         "ad": ad or mahalle,
         "kat_sayisi": kat,
         "insaat_alani": alan,
+        "toplam_insa_alani": insa_alani,
         "daireler": dagilim["adetler"],
         "artan_alan": dagilim["artan_alan"],
         "m2_fiyat": fiyat,

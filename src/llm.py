@@ -37,7 +37,8 @@ def sonuc_metni(s):
     pay = 100 * s["arsa_sahibine_kalan"] / s["brut_gelir"] if s["brut_gelir"] else 0
     return "\n".join([
         f"Senaryo: {s['ad']}",
-        f"Kat sayisi: {s['kat_sayisi']}, insaat alani: {s['insaat_alani']:.0f} m2, yapi sinifi: {s['sinif']}",
+        f"Kat sayisi: {s['kat_sayisi']}, emsal alani: {s['insaat_alani']:.0f} m2, "
+        f"emsal disi dahil toplam insa alani: {s['toplam_insa_alani']:.0f} m2, yapi sinifi: {s['sinif']}",
         f"Daireler: {daireler} (artan alan {s['artan_alan']:.0f} m2)",
         f"Satis fiyati: {s['m2_fiyat']:,.0f} TL/m2".replace(",", "."),
         f"Brut satis geliri: {_tl(s['brut_gelir'])}",

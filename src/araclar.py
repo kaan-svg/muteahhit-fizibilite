@@ -13,7 +13,7 @@ from src.gelir import pazar_yukle
 from src.senaryo import fizibilite
 
 DAIRE_TIPLERI = {"oran_1_1": "1+1", "oran_2_1": "2+1", "oran_3_1": "3+1"}
-DEGISTIRILEBILIR = ["arsa_sahibi_payi", "ek_gider_orani", "m2_fiyat", "emsal", "max_kat", "mahalle"]
+DEGISTIRILEBILIR = ["arsa_sahibi_payi", "ek_gider_orani", "emsal_disi_orani", "m2_fiyat", "emsal", "max_kat", "mahalle"]
 
 _ORAN = {"type": "number", "description": "0 ile 1 arasi oran, or. 0.45"}
 
@@ -39,6 +39,9 @@ ARACLAR = [
                     "max_kat": {"type": "integer", "description": "Istege bagli. Plandaki kat siniri"},
                     "arsa_sahibi_payi": {**_ORAN, "description": "Istege bagli. Kat karsiliginda arsa sahibine birakilan pay, or. 0.45"},
                     "ek_gider_orani": {**_ORAN, "description": "Istege bagli. KDV, ruhsat, pazarlama icin insaat maliyetine eklenen oran, or. 0.25"},
+                    "emsal_disi_orani": {**_ORAN, "description": (
+                        "Istege bagli. Balkon, merdiven, otopark gibi emsale sayilmayan ama insa edilen "
+                        "alanlarin emsal alanina orani, en fazla 0.30. Verilmezse 0 (maliyet dusuk cikar)")},
                     "m2_fiyat": {"type": "number", "description": "Istege bagli. Satis fiyati TL/m2; verilmezse mahalle ortalamasi kullanilir"},
                 },
                 "required": ["arsa_alani", "taks", "emsal", "mahalle"],
@@ -133,6 +136,7 @@ def _arsa_argumanlari(a):
         "oranlar": oranlar,
         "arsa_sahibi_payi": _oran(a.get("arsa_sahibi_payi") or 0, "arsa_sahibi_payi"),
         "ek_gider_orani": _oran(a.get("ek_gider_orani") or 0, "ek_gider_orani"),
+        "emsal_disi_orani": _oran(a.get("emsal_disi_orani") or 0, "emsal_disi_orani"),
     }
     if a.get("max_kat") not in (None, "", 0):
         p["max_kat"] = int(_sayi(a["max_kat"], "max_kat"))
@@ -147,6 +151,7 @@ def _ozet(s):
     return {
         "kat_sayisi": s["kat_sayisi"],
         "insaat_alani_m2": round(s["insaat_alani"]),
+        "toplam_insa_alani_m2": round(s["toplam_insa_alani"]),
         "daireler": {t: a for t, a in s["daireler"].items() if a},
         "m2_fiyat_tl": round(s["m2_fiyat"]),
         "brut_gelir_milyon_tl": m(s["brut_gelir"]),

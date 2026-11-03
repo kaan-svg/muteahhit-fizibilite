@@ -27,13 +27,14 @@ def mahalleler():
 # ---------- Hesap sekmesi ----------
 
 def _arsa(arsa_alani, taks, emsal, mahalle, oran_11, oran_21, oran_31,
-          max_kat, pay, ek_gider, m2_fiyat):
+          max_kat, pay, ek_gider, m2_fiyat, emsal_disi=0):
     """Form degerlerini arac argumanlarina cevirir. Yuzdeler 0-100 gelir."""
     return {
         "arsa_alani": arsa_alani, "taks": taks, "emsal": emsal, "mahalle": mahalle,
         "oran_1_1": oran_11 / 100, "oran_2_1": oran_21 / 100, "oran_3_1": oran_31 / 100,
         "max_kat": max_kat or None, "arsa_sahibi_payi": pay / 100,
         "ek_gider_orani": ek_gider / 100, "m2_fiyat": m2_fiyat or None,
+        "emsal_disi_orani": emsal_disi / 100,
     }
 
 
@@ -62,7 +63,8 @@ def hesapla(*form):
         "",
         "| Kalem | Değer |", "|---|---|",
         f"| Kat sayısı | {s['kat_sayisi']} |",
-        f"| İnşaat alanı | {s['insaat_alani_m2']} m² |",
+        f"| Emsal alanı | {s['insaat_alani_m2']} m² |",
+        f"| Toplam inşa alanı (emsal dışı dahil) | {s['toplam_insa_alani_m2']} m² |",
         f"| Daireler | {daireler} |",
         f"| Satış fiyatı | {s['m2_fiyat_tl']:,} TL/m² |".replace(",", "."),
         f"| Brüt satış geliri | {_tl(s['brut_gelir_milyon_tl'])} |",
@@ -72,7 +74,7 @@ def hesapla(*form):
         f"| **Kâr** | **{_tl(s['kar_milyon_tl'])}** |",
         "",
         "_Tahmini değerlerdir. Fiyatlar ilan ortalaması, maliyet Bakanlık birim fiyatıdır; "
-        "emsal dışı alanlar (balkon, otopark) henüz hesaba katılmıyor._",
+        "emsal dışı alanlar yalnızca maliyete eklenir, satış alanına eklenmez._",
     ]) + uyari
 
     d = arac_calistir("duyarlilik_analizi", {"arsa": arsa, "parametre": "arsa_sahibi_payi",
@@ -175,6 +177,8 @@ def arayuz():
                         o31 = gr.Slider(0, 100, 0, step=5, label="3+1")
                     pay = gr.Slider(0, 70, 45, step=1, label="Arsa sahibi payı % (kat karşılığı)")
                     ek = gr.Slider(0, 60, 25, step=1, label="Ek giderler % (KDV, ruhsat, pazarlama)")
+                    emsal_disi = gr.Slider(0, 30, 20, step=1,
+                                           label="Emsal dışı alanlar % (balkon, merdiven, otopark; en fazla %30)")
                     with gr.Row():
                         hesapla_btn = gr.Button("Hesapla", variant="primary")
                         yorum_btn = gr.Button("Model yorumlasın")
@@ -182,7 +186,7 @@ def arayuz():
                     ozet = gr.Markdown()
                     duyarlilik = gr.Markdown()
                     yorum = gr.Markdown()
-            girdiler = [arsa_alani, taks, emsal, mahalle, o11, o21, o31, max_kat, pay, ek, m2_fiyat]
+            girdiler = [arsa_alani, taks, emsal, mahalle, o11, o21, o31, max_kat, pay, ek, m2_fiyat, emsal_disi]
             hesapla_btn.click(hesapla, girdiler, [ozet, duyarlilik])
             yorum_btn.click(yorumla, girdiler, yorum)
             demo.load(hesapla, girdiler, [ozet, duyarlilik])
