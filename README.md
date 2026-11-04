@@ -1,5 +1,7 @@
 # Müteahhit Fizibilite Asistanı
 
+[![tests](https://github.com/kaan-svg/muteahhit-fizibilite/actions/workflows/tests.yml/badge.svg)](https://github.com/kaan-svg/muteahhit-fizibilite/actions/workflows/tests.yml)
+
 A local AI assistant for small residential construction projects in **Alanya / Antalya, Turkey**.
 Given a plot and its zoning parameters, it estimates buildable area, apartment mix, construction cost,
 sales revenue and the contractor's profit, and answers questions about the zoning regulation.
