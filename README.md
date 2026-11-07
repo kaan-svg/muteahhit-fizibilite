@@ -13,7 +13,7 @@ Everything runs locally: a tested Python calculation core, an agent on top of a 
 **The LLM never does the math.** Every number comes from the calculation code; the model only
 decides which tool to call and explains the result.
 
-> ⚠️ **For information only.** A learning project, not investment, legal or engineering advice.
+>  **For information only.** A learning project, not investment, legal or engineering advice.
 > Prices and costs are rough public averages and assumptions. Always check the official zoning
 > status (imar durumu) of a parcel and real local prices before making any decision.
 
@@ -212,6 +212,6 @@ If Ollama runs on Windows and the code in WSL, enable mirrored networking
 - [ ] Code-level guard: refuse calculation when TAKS/emsal were not given by the user
 - [x] Areas excluded from emsal added to cost (balconies, stairs, parking)
 - [ ] Separate, lower unit cost for excluded areas
-- [ ] More runs per case (10+) for stable regulation scores; try a larger model
+- [X ] More runs per case (10+) for stable regulation scores; try a larger model
 - [ ] Real Alanya prices, unit sizes and construction costs from local sources
 - [ ] Compare with a real completed project
