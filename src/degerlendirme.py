@@ -177,13 +177,18 @@ def puanla(vaka, cevap, izler):
 
 # ---------- Calistirma ----------
 
+class AltyapiHatasi(RuntimeError):
+    """Modele ulasilamadi; bu bir model hatasi degil, puanlanmamali."""
+
+
 def vaka_calistir(vaka, **kw):
     mesajlar = yeni_konusma() + [{"role": "user", "content": vaka["soru"]}]
     baslangic = time.perf_counter()
     try:
         cevap = calistir(mesajlar, gunluk=lambda *a: None, **kw)
-    except Exception as e:  # baglanti vb.
-        cevap = f"HATA: {e}"
+    except Exception as e:
+        # Model calismiyorsa (Ollama kapali, paket eksik...) olcum anlamsiz: dur.
+        raise AltyapiHatasi(f"{type(e).__name__}: {e}") from e
     izler = arac_izleri(mesajlar)
     kontroller = puanla(vaka, cevap, izler)
     return {"vaka": vaka["ad"], "gecti": all(kontroller.values()), "kontroller": kontroller,
@@ -243,6 +248,11 @@ if __name__ == "__main__":
     ap.add_argument("--model", default=VARSAYILAN_MODEL)
     a = ap.parse_args()
 
-    sonuclar = degerlendir(a.tekrar, a.vaka, model=a.model)
+    try:
+        sonuclar = degerlendir(a.tekrar, a.vaka, model=a.model)
+    except AltyapiHatasi as e:
+        raise SystemExit(
+            f"\nModele ulasilamadi, degerlendirme durduruldu (sonuc kaydedilmedi).\n  {e}\n"
+            "Kontrol: .venv aktif mi (satir basinda '(.venv)'), Ollama acik mi (curl localhost:11434)?")
     print("\n" + ozet(sonuclar))
     print(f"\nKaydedildi: {kaydet(sonuclar, a.model)}")
