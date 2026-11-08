@@ -105,3 +105,14 @@ def test_ozet_tablosu():
                 {"vaka": "a", "gecti": False, "kontroller": {"x": False}, "sure_sn": 4}]
     metin = ozet(sonuclar)
     assert "1/2 (%50)" in metin and "| a | 1/2 | x x1 | 3 sn |" in metin
+
+
+def test_baglanti_hatasi_puanlanmaz_durur():
+    from src.degerlendirme import AltyapiHatasi
+
+    class Kapali:
+        def chat(self, **kw):
+            raise ConnectionError("Failed to connect to Ollama")
+
+    with pytest.raises(AltyapiHatasi, match="ConnectionError"):
+        vaka_calistir(VAKALAR["mahalleler"], istemci=Kapali())
