@@ -17,8 +17,6 @@ decides which tool to call and explains the result.
 > Prices and costs are rough public averages and assumptions. Always check the official zoning
 > status (imar durumu) of a parcel and real local prices before making any decision.
 
-![Demo](docs/demo.gif)
-
 ## Features
 
 - **Feasibility calculator:** zoning (TAKS, emsal, floor limit) → apartment mix → cost → revenue → profit,
@@ -209,9 +207,10 @@ If Ollama runs on Windows and the code in WSL, enable mirrored networking
 - [x] RAG over the zoning regulation
 - [x] Gradio UI
 - [x] Evaluation script
-- [ ] Code-level guard: refuse calculation when TAKS/emsal were not given by the user
+- [x] Code-level guard: refuse calculation when TAKS/emsal were not given by the user
 - [x] Areas excluded from emsal added to cost (balconies, stairs, parking)
 - [ ] Separate, lower unit cost for excluded areas
-- [X ] More runs per case (10+) for stable regulation scores; try a larger model
+- [ ] More runs per case (10+) for stable regulation scores
+- [ ] Try a larger model (needs more than 8 GB VRAM)
 - [ ] Real Alanya prices, unit sizes and construction costs from local sources
 - [ ] Compare with a real completed project
