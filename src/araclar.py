@@ -40,8 +40,8 @@ ARACLAR = [
                     "arsa_sahibi_payi": {**_ORAN, "description": "Istege bagli. Kat karsiliginda arsa sahibine birakilan pay, or. 0.45"},
                     "ek_gider_orani": {**_ORAN, "description": "Istege bagli. KDV, ruhsat, pazarlama icin insaat maliyetine eklenen oran, or. 0.25"},
                     "emsal_disi_orani": {**_ORAN, "description": (
-                        "Istege bagli. Balkon, merdiven, otopark gibi emsale sayilmayan ama insa edilen "
-                        "alanlarin emsal alanina orani, en fazla 0.30. Verilmezse 0 (maliyet dusuk cikar)")},
+                        "Istege bagli. Emsale sayilmayan insa alanlarinin (balkon, merdiven, otopark) "
+                        "emsal alanina orani. Sadece kullanici bir oran verdiyse doldur.")},
                     "m2_fiyat": {"type": "number", "description": "Istege bagli. Satis fiyati TL/m2; verilmezse mahalle ortalamasi kullanilir"},
                 },
                 "required": ["arsa_alani", "taks", "emsal", "mahalle"],

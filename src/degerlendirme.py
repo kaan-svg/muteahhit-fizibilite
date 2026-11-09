@@ -160,9 +160,11 @@ def puanla(vaka, cevap, izler):
         if len(vaka["beklenen_kar"]) == 1:
             p["yon"] = _zarar_diyor(cevap) == (vaka["beklenen_kar"][0] < 0)
     elif vaka["tur"] == "sormali":
-        # Hesap araci cagrildiysa TAKS/emsal uydurulmus demektir (hata donse bile).
-        uydurdu = any(ad == "fizibilite_hesapla" for ad, _ in izler)
-        p["sormali"] = not uydurdu and any(k in cevap.lower() for k in ("taks", "emsal"))
+        # Hesap araci cagrildiysa model TAKS/emsal uydurmustur. Koruma (koruma.py) engellediyse
+        # uydurma kullaniciya ulasmaz; o durumda olculen, modelin sonunda soru sorup sormadigi.
+        cagrilar = [s for ad, s in izler if ad == "fizibilite_hesapla"]
+        engellendi = all("vermedi" in str(s.get("hata", "")) for s in cagrilar)
+        p["sormali"] = engellendi and any(k in cevap.lower() for k in ("taks", "emsal"))
     elif vaka["tur"] == "mevzuat":
         p["arac"] = any(ad == "yonetmelik_ara" for ad, _ in izler)
         p["madde"] = re.search(rf"\b{vaka['madde']}\b", cevap) is not None

@@ -10,6 +10,8 @@ Kural: arsa_alani, taks ve emsal degerleri kullanicinin mesajlarinda gecmeli.
 import re
 
 KONTROL_EDILEN = ("arsa_alani", "taks", "emsal")
+# Istege bagli: bos/0 olabilir, ama doluysa deger kullanicinin mesajinda gecmeli
+ISTEGE_BAGLI = ("arsa_sahibi_payi", "ek_gider_orani", "emsal_disi_orani", "m2_fiyat", "max_kat")
 HESAP_ARACLARI = ("fizibilite_hesapla", "duyarlilik_analizi")
 
 
@@ -56,6 +58,12 @@ def uydurma_kontrol(ad, argumanlar, mesajlar):
     sayilar = kullanici_sayilari(mesajlar)
     eksik = [k for k in KONTROL_EDILEN
              if k != degisen and (a.get(k) in (None, "") or not _var_mi(a[k], sayilar))]
+    uydurulan = [k for k in ISTEGE_BAGLI
+                 if k != degisen and a.get(k) not in (None, "", 0, "0") and not _var_mi(a[k], sayilar)]
+    if uydurulan and not eksik:
+        return {"hata": (
+            f"Kullanici su degerleri vermedi: {', '.join(uydurulan)}. Bu alanlari bos birakip "
+            "araci tekrar cagir; kullanici istemedikce bu degerleri ekleme.")}
     if not eksik:
         return None
     return {"hata": (
