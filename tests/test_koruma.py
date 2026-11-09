@@ -50,3 +50,19 @@ def test_diger_araclar_kontrol_edilmez():
 def test_binlik_ayirici():
     assert 1000 in kullanici_sayilari(kullanici("1.000 m2"))
     assert 1.5 in kullanici_sayilari(kullanici("emsal 1.5"))
+
+
+def test_istege_bagli_uydurma_engellenir():
+    mesaj = kullanici("Kestel 800 m2, TAKS 0.35, emsal 1.40, pay %40, ek gider %20")
+    arsa = {"arsa_alani": 800, "taks": 0.35, "emsal": 1.4, "mahalle": "Kestel",
+            "arsa_sahibi_payi": 0.4, "ek_gider_orani": 0.2}
+    assert uydurma_kontrol("fizibilite_hesapla", arsa, mesaj) is None
+    assert uydurma_kontrol("fizibilite_hesapla", {**arsa, "emsal_disi_orani": 0.2}, mesaj) is None  # %20 mesajda var
+    sonuc = uydurma_kontrol("fizibilite_hesapla", {**arsa, "emsal_disi_orani": 0.25}, mesaj)
+    assert "emsal_disi_orani" in sonuc["hata"]
+    assert uydurma_kontrol("fizibilite_hesapla", {**arsa, "max_kat": 0, "m2_fiyat": None}, mesaj) is None
+
+
+def test_duyarlilikta_denenen_deger_istege_bagli_icin_de_serbest():
+    args = {"arsa": {**ARSA, "arsa_sahibi_payi": 0.45}, "parametre": "arsa_sahibi_payi", "degerler": [0.4]}
+    assert uydurma_kontrol("duyarlilik_analizi", args, kullanici("1000 m2, TAKS 0.30, emsal 1.50")) is None

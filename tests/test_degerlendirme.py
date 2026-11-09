@@ -116,3 +116,10 @@ def test_baglanti_hatasi_puanlanmaz_durur():
 
     with pytest.raises(AltyapiHatasi, match="ConnectionError"):
         vaka_calistir(VAKALAR["mahalleler"], istemci=Kapali())
+
+
+def test_koruma_engellediyse_soru_sormak_yeterli():
+    v = VAKALAR["eksik_bilgi"]
+    engel = arac_izleri([tool("fizibilite_hesapla", {"hata": "Kullanici su degerleri vermedi: taks, emsal."})])
+    assert puanla(v, "TAKS ve emsal degerlerini yazar misin?", engel)["sormali"]
+    assert not puanla(v, "Konakli icin fiyat yok.", engel)["sormali"]
