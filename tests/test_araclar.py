@@ -88,3 +88,18 @@ def test_emsal_disi_duyarlilik():
 
 def test_emsal_disi_yuzde_30_ustu_hata():
     assert "hata" in arac_calistir("fizibilite_hesapla", {**ARSA, "emsal_disi_orani": 0.4})
+
+
+def test_kullanilan_karisim_donuyor():
+    s = arac_calistir("fizibilite_hesapla", {k: v for k, v in ARSA.items() if not k.startswith("oran")})
+    assert s["varsayilan_karisim"] is True and s["daire_karisimi_yuzde"] == {"1+1": 50, "2+1": 50}
+    s = arac_calistir("fizibilite_hesapla", {**ARSA, "oran_1_1": 1, "oran_2_1": 0})
+    assert s["varsayilan_karisim"] is False and s["daire_karisimi_yuzde"] == {"1+1": 100}
+
+
+def test_yonetmelik_sonucunda_kaynak_alani(monkeypatch):
+    from src import yonetmelik
+    monkeypatch.setattr(yonetmelik, "ara", lambda soru, k=3: [
+        {"madde": "5", "baslik": "Genel ilkeler", "metin": "...%30...", "puan": 0.5}])
+    s = arac_calistir("yonetmelik_ara", {"soru": "emsal disi"})
+    assert s["sonuclar"][0]["kaynak"].endswith("Madde 5")

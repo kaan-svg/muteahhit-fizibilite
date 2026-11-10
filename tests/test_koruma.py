@@ -66,3 +66,15 @@ def test_istege_bagli_uydurma_engellenir():
 def test_duyarlilikta_denenen_deger_istege_bagli_icin_de_serbest():
     args = {"arsa": {**ARSA, "arsa_sahibi_payi": 0.45}, "parametre": "arsa_sahibi_payi", "degerler": [0.4]}
     assert uydurma_kontrol("duyarlilik_analizi", args, kullanici("1000 m2, TAKS 0.30, emsal 1.50")) is None
+
+
+def test_daire_tipi_soylendiyse_oran_zorunlu():
+    mesaj = kullanici("Kestel 800 m2, TAKS 0.35, emsal 1.40. Sadece 1+1 yapacagim.")
+    arsa = {"arsa_alani": 800, "taks": 0.35, "emsal": 1.4, "mahalle": "Kestel"}
+    hata = uydurma_kontrol("fizibilite_hesapla", arsa, mesaj)["hata"]
+    assert "1+1" in hata and "oran_1_1" in hata
+    assert uydurma_kontrol("fizibilite_hesapla", {**arsa, "oran_1_1": 1}, mesaj) is None
+
+
+def test_daire_tipi_yoksa_oran_gerekmez():
+    assert uydurma_kontrol("fizibilite_hesapla", ARSA, kullanici("1000 m2, TAKS 0.30, emsal 1.50")) is None

@@ -123,3 +123,9 @@ def test_koruma_engellediyse_soru_sormak_yeterli():
     engel = arac_izleri([tool("fizibilite_hesapla", {"hata": "Kullanici su degerleri vermedi: taks, emsal."})])
     assert puanla(v, "TAKS ve emsal degerlerini yazar misin?", engel)["sormali"]
     assert not puanla(v, "Konakli icin fiyat yok.", engel)["sormali"]
+
+
+def test_karli_olmamaktadir_zarar_sayilir():
+    izler = arac_izleri([tool("fizibilite_hesapla", {"kar_milyon_tl": -1.52})])
+    cevap = "Toplam kar -1.52 milyon TL. Kar marji %3.8. Bu durumda arsa karlı olmamaktadır."
+    assert puanla(VAKALAR["mahmutlar"], cevap, izler)["yon"]
