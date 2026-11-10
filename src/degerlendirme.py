@@ -143,7 +143,7 @@ def _yakin(a, b):
 def _zarar_diyor(cevap):
     c = cevap.lower()
     return any(k in c for k in ("zarar", "karlı değil", "kârlı değil", "karli degil", "negatif", "kayıp",
-                                "karlı olmamış", "kârlı olmamış", "elde edilemem", "karlı olmadığı",
+                                "karlı olma", "kârlı olma", "karli olma", "elde edilemem",
                                 "kârlı olmadığı", "kar edilemez"))
 
 

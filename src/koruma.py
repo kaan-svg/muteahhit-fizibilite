@@ -36,6 +36,15 @@ def kullanici_sayilari(mesajlar):
     return sayilar
 
 
+def kullanici_daire_tipleri(mesajlar):
+    """Kullanici mesajlarinda gecen daire tipleri: {'1+1', '2+1'}"""
+    tipler = set()
+    for m in mesajlar:
+        if _rol(m) == "user":
+            tipler |= {f"{a}+{b}" for a, b in re.findall(r"\b([1-3])\s*\+\s*([1-2])\b", _icerik(m))}
+    return tipler
+
+
 def _var_mi(deger, sayilar):
     try:
         x = float(str(deger).replace("%", "").replace(",", "."))
@@ -56,6 +65,13 @@ def uydurma_kontrol(ad, argumanlar, mesajlar):
         a = {str(k).lower(): v for k, v in (a.get("arsa") or {}).items()}
 
     sayilar = kullanici_sayilari(mesajlar)
+    tipler = kullanici_daire_tipleri(mesajlar)
+    oran_verildi = any(a.get(k) not in (None, "", 0, "0") for k in ("oran_1_1", "oran_2_1", "oran_3_1"))
+    if tipler and not oran_verildi and degisen is None:
+        alanlar = ", ".join(f"oran_{t.replace('+', '_')}" for t in sorted(tipler))
+        return {"hata": (
+            f"Kullanici daire tipi belirtti ({', '.join(sorted(tipler))}) ama oran gonderilmedi. "
+            f"{alanlar} alanlarini doldurup araci tekrar cagir (or. 'sadece 1+1' -> oran_1_1=1).")}
     eksik = [k for k in KONTROL_EDILEN
              if k != degisen and (a.get(k) in (None, "") or not _var_mi(a[k], sayilar))]
     uydurulan = [k for k in ISTEGE_BAGLI

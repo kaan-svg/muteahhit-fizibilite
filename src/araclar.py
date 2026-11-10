@@ -33,15 +33,15 @@ ARACLAR = [
                     "taks": {"type": "number", "description": "TAKS, or. 0.30"},
                     "emsal": {"type": "number", "description": "Emsal (KAKS), or. 1.50"},
                     "mahalle": {"type": "string", "description": "Alanya mahallesi, or. Mahmutlar"},
-                    "oran_1_1": {**_ORAN, "description": "Istege bagli. 1+1 dairelerin alan payi, 0-1"},
-                    "oran_2_1": {**_ORAN, "description": "Istege bagli. 2+1 dairelerin alan payi, 0-1"},
-                    "oran_3_1": {**_ORAN, "description": "Istege bagli. 3+1 dairelerin alan payi, 0-1. Hic oran verilmezse %50 1+1, %50 2+1"},
+                    "oran_1_1": {**_ORAN, "description": "1+1 dairelerin alan payi, 0-1. Kullanici daire tipi soylediyse doldur: 'sadece 1+1' -> oran_1_1=1"},
+                    "oran_2_1": {**_ORAN, "description": "2+1 dairelerin alan payi, 0-1. 'yarisi 2+1' -> 0.5"},
+                    "oran_3_1": {**_ORAN, "description": "3+1 dairelerin alan payi, 0-1. Kullanici daire tipi soylemediyse uc oran alanini da bos birak (%50 1+1, %50 2+1 kullanilir)"},
                     "max_kat": {"type": "integer", "description": "Istege bagli. Plandaki kat siniri"},
                     "arsa_sahibi_payi": {**_ORAN, "description": "Istege bagli. Kat karsiliginda arsa sahibine birakilan pay, or. 0.45"},
                     "ek_gider_orani": {**_ORAN, "description": "Istege bagli. KDV, ruhsat, pazarlama icin insaat maliyetine eklenen oran, or. 0.25"},
                     "emsal_disi_orani": {**_ORAN, "description": (
                         "Istege bagli. Emsale sayilmayan insa alanlarinin (balkon, merdiven, otopark) "
-                        "emsal alanina orani. Sadece kullanici bir oran verdiyse doldur.")},
+                        "emsal alanina orani. Sadece kullanici emsal disi alan orani soylediyse doldur.")},
                     "m2_fiyat": {"type": "number", "description": "Istege bagli. Satis fiyati TL/m2; verilmezse mahalle ortalamasi kullanilir"},
                 },
                 "required": ["arsa_alani", "taks", "emsal", "mahalle"],
@@ -166,7 +166,13 @@ def _ozet(s):
 # ---------- Araclar ----------
 
 def fizibilite_hesapla(**a):
-    return _ozet(fizibilite(**_arsa_argumanlari(a)))
+    p = _arsa_argumanlari(a)
+    sonuc = _ozet(fizibilite(**p))
+    # Kullanilan karisimi acikca dondur: model "sadece 1+1" dedigi halde oran gondermeyip
+    # cevapta "%100 1+1 alindi" diyordu. Varsayilan kullanildiysa bunu gorebilmeli.
+    sonuc["daire_karisimi_yuzde"] = {t: round(o * 100) for t, o in p["oranlar"].items()}
+    sonuc["varsayilan_karisim"] = not any(a.get(k) not in (None, "", 0) for k in DAIRE_TIPLERI)
+    return sonuc
 
 
 def duyarlilik_analizi(arsa, parametre, degerler):
@@ -190,7 +196,8 @@ def yonetmelik_ara(soru):
     from src.yonetmelik import ara
     if not str(soru).strip():
         raise ValueError("Soru bos olamaz")
-    return {"sonuclar": [{"madde": s["madde"], "baslik": s["baslik"], "metin": s["metin"]}
+    return {"sonuclar": [{"kaynak": f"Planli Alanlar Imar Yonetmeligi Madde {s['madde']}",
+                          "baslik": s["baslik"], "metin": s["metin"]}
                          for s in ara(str(soru), k=3)]}
 
 

@@ -41,7 +41,7 @@ SISTEM_MESAJI = (
     "5. Kar = muteahhit geliri - toplam gider. Brut geliri giderle karsilastirma.\n"
     "6. 'Kar neye bagli', 'X olsa ne olur' sorularinda duyarlilik_analizi kullan.\n"
     "7. Mevzuat sorularinda yonetmelik_ara kullan ve cevapta madde numarasini yaz. "
-    "Bulunan metinde cevap yoksa bilmedigini soyle, tahmin etme. Parselin imar plani "
+    "Her sonucun 'kaynak' alanindaki madde numarasini cevapta yaz. Bulunan metinde cevap yoksa bilmedigini soyle, tahmin etme. Parselin imar plani "
     "notlari yonetmelikten farkli olabilir, bunu hatirlat.\n"
     "8. Turkce, kisa ve net yaz. Sonuclarin tahmini oldugunu belirt, yatirim tavsiyesi verme."
 )
