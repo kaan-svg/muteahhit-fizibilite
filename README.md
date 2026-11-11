@@ -75,68 +75,82 @@ flowchart LR
 
 ## Evaluation
 
-`python -m src.degerlendirme` runs 10 cases × 3 runs against the local model. Expected numbers come
-from the calculation code, so this measures the **model's behaviour**, not the formulas
+`python -m src.degerlendirme --tekrar 10` runs 10 cases × 10 runs against the local model. Expected numbers
+come from the calculation code, so this measures the **model's behaviour**, not the formulas
 (those are covered by unit tests).
 
 - **arac:** the right tool was called with the right arguments (the tool returned the expected profit)
-- **rakam:** the number in the answer matches the tool output (±0.06 M TL)
+- **rakam:** the number in the answer matches the tool output (±0.06 M TL, or the margin)
 - **yon:** profit/loss direction stated correctly
 - **madde / yasak:** the regulation answer cites the right article and doesn't contain a known wrong claim
-- **sormali:** with missing data, the agent asks instead of inventing values
+- **sormali:** with missing TAKS/emsal, nothing is calculated with invented values and the user is asked
 
-### Results (`qwen3:8b`, thinking off, 3 runs per case)
+### Results (`qwen3:8b`, thinking off, 10 runs per case)
 
-| Case | What it tests | Passed | Failed checks |
+| Case | What it tests | Passed |
+|---|---|---|
+| kestel_1+1 | Only 1+1 units | 10/10 |
+| tosmur_kendi_arsam | No landowner share | 10/10 |
+| avsallar_buyuk | 2+1 / 3+1 mix, loss expected | 10/10 |
+| duyarlilik | Two scenarios, two numbers | 10/10 |
+| eksik_bilgi | TAKS / emsal missing, must ask | 10/10 |
+| emsal_disi_sinir | Regulation: 30% cap, Madde 5 | 10/10 |
+| mahalleler | Price list tool | 10/10 |
+| mahmutlar | Basic feasibility, loss expected | 9/10 ¹ |
+| oba_kat_siniri | Floor limit from the plan | 9/10 ¹ |
+| balkon | Regulation: balconies, Madde 22 | **4/10** |
+| **Total** | | **92/100** |
+
+¹ one profit/loss-direction failure each, not yet checked by hand.
+Average response time: 3–8 s per question on an RTX 5060 (8 GB).
+
+### How it got there
+
+| | Run | Total | What changed before the run |
 |---|---|---|---|
-| mahmutlar | Basic feasibility, loss expected | 2/3 | yon ×1 ¹ |
-| kestel_1+1 | Only 1+1 units | 3/3 | |
-| oba_kat_siniri | Floor limit from the plan | 3/3 | |
-| tosmur_kendi_arsam | No landowner share | 3/3 | |
-| avsallar_buyuk | 2+1 / 3+1 mix, loss expected | 3/3 | |
-| duyarlilik | Two scenarios, two numbers | 3/3 | |
-| mahalleler | Price list tool | 3/3 | |
-| eksik_bilgi | TAKS / emsal missing, must ask | **0/3** | sormali ×3 |
-| balkon | Regulation, Madde 22 | **0/3** | yasak ×2, madde ×1 |
-| emsal_disi_sinir | Regulation, 30% cap (Madde 5) | 2/3 | madde ×1 |
-| **Total** | | **22/30 (73%)** | |
+| 1 | 3 runs/case | 22/30 | — (after fixing two checker bugs, see below) |
+| 2 | 10 runs/case | 64/100 | Added areas excluded from emsal (new tool parameter) |
+| 3 | 10 runs/case | 74/100 | Removed a leak from a tool description; code guard against invented values |
+| 4 | 10 runs/case | **92/100** | Code guard for the apartment mix; article number in search results |
 
-¹ not yet verified by hand; may be a false negative of the keyword check.
+Each step came from reading the failed answers, not from guessing:
 
-Average response time: 3–5 s per question on an RTX 5060 (8 GB).
-
-### What the numbers say
-
-- **Calculations: 17/18.** Tool choice and arguments were correct in all 18 runs. The model reliably turns
-  a Turkish description of a plot into the right tool call and reports the result.
-- **Missing data: 0/3.** Asked about a plot with no TAKS/emsal, the model invents values and calls the
-  calculation tool instead of asking. In this case the tool failed for another reason (no price data for
-  the neighbourhood), which hid the invented values in the first version of the checker.
-  The prompt rule ("don't guess, ask") is not enough; this needs a code-level guard.
-- **Regulation: 2/6.** Retrieval returns the right articles, but the answer is unstable. For the balcony
-  question the model repeatedly turns "*not* included in emsal under these conditions" into
-  "*may be* included", the opposite of the rule. For the 30% cap the content was right in every run,
-  only the article number was missing.
-- **Variance is high on regulation questions.** An earlier run gave balkon 2/3 and emsal_disi_sinir 0/3,
-  the reverse of this run. Three runs per case is too few for a stable rate on these questions.
+- **A new feature broke an old case.** After adding the excluded-area parameter, *kestel_1+1* fell from 3/3
+  to 4/10 and then 0/10. The model stopped sending the apartment mix ("only 1+1"), the tool used the default
+  50/50 mix, and the model still wrote "*1+1 oranı %100 olarak alınmıştır*" — claiming it had followed an
+  instruction it had ignored. Fix: the guard rejects a call when the user named a unit type but no mix was
+  sent, and the tool result now states which mix was used. 0/10 → 10/10.
+- **The model answered from my own tool description.** The parameter description said "at most 0.30", so for
+  the 30% question the model answered without searching the regulation (0.5 s answers). Removing the number
+  and adding the article number to every search result: 0/10 → 10/10.
+- **Prompt rules did not stop invented values; code did.** With TAKS/emsal missing the model invented them in
+  every run despite the "don't guess, ask" rule. `koruma.py` now checks that every zoning value in a tool call
+  actually appears in the user's messages and returns an error otherwise. The model *still tries* to invent
+  values in most runs, but none reach the user: 0/10 → 10/10.
+- **Still unsolved: the balcony rule (4/10).** Retrieval finds Madde 22 every time, but the model often turns
+  "balconies are *not* counted in emsal under these conditions" into "*may be* counted". This is a reading
+  error of the 8B model that guards in code cannot catch.
+- **Three runs were not enough.** With 3 runs, the balcony and 30% cases swapped results between two runs
+  (2/3 ↔ 0/3). With 10 runs the regressions above became visible.
 
 ### Fixing the evaluator first
 
-The first run reported 23/30, but reading every failed answer showed the checker itself was wrong
-in two places:
-- a correct answer that stated the **margin** (−16.2%) and "*kâr elde edilememiştir*" was marked as wrong
-  (only the TL amount and a few loss phrases were recognised);
-- an answer that **invented TAKS/emsal** was not caught, because the tool call returned an error.
+The evaluator is code too, and it was wrong four times:
+- a correct answer that gave the **margin** (−16.2%) and "*kâr elde edilememiştir*" was marked wrong;
+- an answer that **invented TAKS/emsal** was not caught because the tool call happened to fail for another reason;
+- "*karlı olmamaktadır*" was not recognised as a loss;
+- when Ollama was not reachable, every case was scored as failed (0/30) instead of stopping.
 
-Both were fixed (and covered by tests) before the run above. The second fix made the score *worse*,
-which is the point: the evaluation should measure the model, not flatter it.
-Raw answers and tool arguments of every run are saved in `eval/sonuc-*.json`.
+Each was fixed with a test. Some fixes made the score *worse*, which is the point: the evaluation should
+measure the model, not flatter it. Raw answers and tool arguments of every run are saved in `eval/sonuc-*.json`.
 
 ## Design decisions
 
 - **Calculations in code, not in the LLM.** An 8B model reads numbers correctly but misreads their
   relationships (in early tests it compared costs with gross revenue instead of the contractor's share).
   The prompt now states the profit formula explicitly, and all arithmetic stays in tested code.
+- **Guards in code, not rules in the prompt.** `koruma.py` rejects tool calls whose zoning values or
+  apartment mix don't come from the user. Prompt rules alone did not stop invented values (see Evaluation).
 - **Argument cleaning instead of prompt rules.** Small models send `45`, `"%45"` or `0.45` for the same
   ratio, `TAKS` instead of `taks`, and fill unknown fields with `0`. These are normalised in code;
   invalid calls return `{"hata": ...}` so the model can retry instead of crashing the loop.
@@ -162,10 +176,11 @@ Raw answers and tool arguments of every run are saved in `eval/sonuc-*.json`.
   (`emsal_disi_orani`, 0–30% per Madde 5) are added to the cost at the same TL/m² as interior space.
   In reality open balconies and parking are cheaper to build, so this overstates their cost; a separate
   unit cost for these areas would be more accurate. They are not added to the sellable area.
-- **Regulation answers are the weakest part** (2/6 in the evaluation). Retrieval finds the right articles,
+- **Regulation answers are the weakest part** (balcony question 4/10 in the evaluation). Retrieval finds the right articles,
   but the 8B model sometimes mixes articles or inverts a rule. Treat regulation answers as pointers to the
   article, not as legal answers. Parcel-specific plan notes always override the general regulation.
-- **The agent invents missing zoning values** (0/3) instead of asking.
+- **The model still tries to invent missing zoning values**; `koruma.py` blocks these calls, but it only
+  checks that a number appears in the user's messages, not which field it belongs to.
 - **PDF extraction artefacts.** `pypdf` splits some words (*"k onut"*); search still works but text is imperfect.
 - Financing cost, time to sell, basements and setbacks are not modelled.
 
@@ -210,7 +225,7 @@ If Ollama runs on Windows and the code in WSL, enable mirrored networking
 - [x] Code-level guard: refuse calculation when TAKS/emsal were not given by the user
 - [x] Areas excluded from emsal added to cost (balconies, stairs, parking)
 - [ ] Separate, lower unit cost for excluded areas
-- [ ] More runs per case (10+) for stable regulation scores
+- [x] More runs per case (10+) for stable regulation scores
 - [ ] Try a larger model (needs more than 8 GB VRAM)
 - [ ] Real Alanya prices, unit sizes and construction costs from local sources
 - [ ] Compare with a real completed project
