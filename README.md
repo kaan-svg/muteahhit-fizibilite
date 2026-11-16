@@ -224,8 +224,8 @@ If Ollama runs on Windows and the code in WSL, enable mirrored networking
 - [x] Evaluation script
 - [x] Code-level guard: refuse calculation when TAKS/emsal were not given by the user
 - [x] Areas excluded from emsal added to cost (balconies, stairs, parking)
-- [ ] Separate, lower unit cost for excluded areas
+- [ C] Separate, lower unit cost for excluded areas
 - [x] More runs per case (10+) for stable regulation scores
 - [ ] Try a larger model (needs more than 8 GB VRAM)
-- [ ] Real Alanya prices, unit sizes and construction costs from local sources
+- [ X] Real Alanya prices, unit sizes and construction costs from local sources
 - [ ] Compare with a real completed project
